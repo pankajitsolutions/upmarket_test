@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "509384511547",
+    "project_id": "upmarket-236d0",
+    "storage_bucket": "upmarket-236d0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509384511547:android:9eea6ef035bbaa139dcc1e",
+        "android_client_info": {
+          "package_name": "com.pankajkcodes.upmarket_test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "509384511547-ct1g1a7jk9sem7co18h8rj44n92uf7iu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWroGg3mdgIdMab-n-xSNqmIoglVR5J_Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "509384511547-ct1g1a7jk9sem7co18h8rj44n92uf7iu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
