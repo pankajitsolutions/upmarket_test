@@ -1,23 +1,37 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:upmarket_test/res/utils.dart';
+
+import '../provider/service_provider.dart';
 
 class EditScreen extends StatefulWidget {
   final String docId;
+  final Map data;
 
-  const EditScreen({Key? key, required this.docId}) : super(key: key);
+  const EditScreen({Key? key, required this.docId, required this.data})
+      : super(key: key);
 
   @override
   State<EditScreen> createState() => _EditScreenState();
 }
 
 class _EditScreenState extends State<EditScreen> {
-  TextEditingController _nameController = TextEditingController();
-  FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+  final TextEditingController _nameController = TextEditingController();
+
+  late ServiceProvider _serviceProvider;
+
+  @override
+  void initState() {
+    _serviceProvider = Provider.of(context, listen: false);
+    _serviceProvider.fetchData();
+    _nameController.text = widget.data["name"];
+    imageUrl = widget.data["image"];
+    super.initState();
+  }
 
   ImagePicker imagePicker = ImagePicker();
   File? file;
@@ -43,15 +57,13 @@ class _EditScreenState extends State<EditScreen> {
 
   bool isUploaded = false;
 
-  updateData(docId, data) {
-    _firebaseFirestore.collection("Persons").doc(docId).update(data);
-  }
-
   @override
   Widget build(BuildContext context) {
+    _serviceProvider = Provider.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Add Person"),
+        title:  Text(widget.data["name"]),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -60,7 +72,10 @@ class _EditScreenState extends State<EditScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               file == null
-                  ? const SizedBox()
+                  ? SizedBox(
+                      height: height(context) * 0.4,
+                      child: Image.network(widget.data["image"]),
+                    )
                   : Container(
                       height: height(context) * 0.5,
                       child: Image.file(file!),
@@ -75,10 +90,7 @@ class _EditScreenState extends State<EditScreen> {
                     padding: const EdgeInsets.all(21),
                     margin: const EdgeInsets.all(21),
                     child: const Icon(Icons.camera_alt)),
-              )
-              /* Image(image: NetworkImage(""))
-              ,*/
-              ,
+              ),
               Container(
                 decoration: myOutlineBoxDecoration(Colors.blue),
                 padding: const EdgeInsets.symmetric(horizontal: 21),
@@ -97,13 +109,11 @@ class _EditScreenState extends State<EditScreen> {
                             if (file != null &&
                                 _nameController.text.trim().isNotEmpty) {
                               uploadProfileImage().then((value) {
-                                _firebaseFirestore
-                                    .collection("Persons")
-                                    .doc(widget.docId)
-                                    .update({
+                                _serviceProvider.updateData(widget.docId, {
                                   "name": _nameController.text.trim(),
                                   "image": imageUrl
                                 }).then((value) {
+                                  _serviceProvider.fetchData();
                                   isUploaded = true;
                                   Navigator.pop(context);
                                   setState(() {});

@@ -1,10 +1,12 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:upmarket_test/res/utils.dart';
+
+import '../provider/service_provider.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({Key? key}) : super(key: key);
@@ -14,8 +16,9 @@ class AddScreen extends StatefulWidget {
 }
 
 class _AddScreenState extends State<AddScreen> {
-  TextEditingController _nameController = TextEditingController();
-  FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+  final TextEditingController _nameController = TextEditingController();
+
+  late ServiceProvider _serviceProvider;
 
   ImagePicker imagePicker = ImagePicker();
   File? file;
@@ -42,14 +45,22 @@ class _AddScreenState extends State<AddScreen> {
   bool isUploaded = false;
 
   @override
+  void initState() {
+    _serviceProvider = Provider.of(context, listen: false);
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    _serviceProvider = Provider.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Add Person"),
+        title: const Text("Add Person"),
       ),
       body: SingleChildScrollView(
         child: Container(
-          margin: EdgeInsets.all(21),
+          margin: const EdgeInsets.all(21),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -66,51 +77,48 @@ class _AddScreenState extends State<AddScreen> {
                 child: Container(
                     width: width(context),
                     decoration: myOutlineBoxDecoration(Colors.blue),
-                    padding: EdgeInsets.all(21),
-                    margin: EdgeInsets.all(21),
-                    child: Icon(Icons.camera_alt)),
+                    padding: const EdgeInsets.all(21),
+                    margin: const EdgeInsets.all(21),
+                    child: const Icon(Icons.camera_alt)),
               )
               /* Image(image: NetworkImage(""))
               ,*/
               ,
               Container(
                 decoration: myOutlineBoxDecoration(Colors.blue),
-                padding: EdgeInsets.symmetric(horizontal: 21),
+                padding: const EdgeInsets.symmetric(horizontal: 21),
                 width: width(context),
                 child: TextField(
                   controller: _nameController,
-
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                       hintText: "Name", border: InputBorder.none),
                 ),
               ),
-              isUploaded == false ? SizedBox(
-                width: width(context),
-                child: ElevatedButton(
-
-                    onPressed: () {
-                      if (file != null &&
-                          _nameController.text.trim().isNotEmpty) {
-                        isUploaded = true;
-                        setState(() {
-
-                        });
-                        uploadProfileImage().then((value) {
-                          _firebaseFirestore.collection("Persons").add({
-                            "name": _nameController.text.trim(),
-                            "image": imageUrl
-                          }).then((value) {
-                            isUploaded = false;
-                            Navigator.pop(context);
-                            setState(() {
-
-                            });
-                          });
-                        });
-                      }
-                    },
-                    child: const Text("Add Details")),
-              ) : CircularProgressIndicator()
+              isUploaded == false
+                  ? SizedBox(
+                      width: width(context),
+                      child: ElevatedButton(
+                          onPressed: () {
+                            if (file != null &&
+                                _nameController.text.trim().isNotEmpty) {
+                              isUploaded = true;
+                              setState(() {});
+                              uploadProfileImage().then((value) {
+                                _serviceProvider.addData({
+                                  "name": _nameController.text.trim(),
+                                  "image": imageUrl
+                                }).then((value) {
+                                  _serviceProvider.fetchData();
+                                  isUploaded = false;
+                                  Navigator.pop(context);
+                                  setState(() {});
+                                });
+                              });
+                            }
+                          },
+                          child: const Text("Add Details")),
+                    )
+                  : const CircularProgressIndicator()
             ],
           ),
         ),

@@ -1,9 +1,12 @@
 import 'dart:developer';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:upmarket_test/provider/service_provider.dart';
 import 'package:upmarket_test/res/utils.dart';
 import 'package:upmarket_test/view/add_screen.dart';
+import 'package:upmarket_test/view/auth_screen.dart';
 import 'package:upmarket_test/view/edit_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,46 +17,43 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
-
-  final _list = [];
-  final _docList = [];
-
-  get list => _list;
-
-  get docList => _docList;
-
-  fetchData() {
-    _firebaseFirestore.collection("Persons").get().then((value) {
-      _list.clear();
-      for (var doc in value.docs) {
-        _docList.add(doc.id);
-        _list.add(doc.data());
-        setState(() {});
-      }
-      log(list.toString());
-    });
-  }
-
-  deleteData(docId) {
-    _firebaseFirestore.collection("Persons").doc(docId).delete();
-  }
+  late ServiceProvider _serviceProvider;
 
   @override
   void initState() {
-    fetchData();
+    _serviceProvider = Provider.of(context, listen: false);
+    _serviceProvider.fetchData();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    _serviceProvider = Provider.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Home"),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: IconButton(
+              onPressed: () {
+                FirebaseAuth.instance.signOut().then((value) {
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (context) => LogInScreen()));
+                });
+              },
+              icon: const Icon(
+                Icons.logout,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
-      body: list.isNotEmpty
+      body: _serviceProvider.list.isNotEmpty
           ? ListView.builder(
-              itemCount: list.length,
+              itemCount: _serviceProvider.list.length,
               itemBuilder: (context, index) {
                 return Container(
                   margin: const EdgeInsets.all(5),
@@ -65,34 +65,72 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           MaterialPageRoute(
                               builder: (builder) => EditScreen(
-                                    docId: docList[index],
+                                    docId: _serviceProvider.docList[index],
+                                    data: {
+                                      "image": _serviceProvider.list[index]
+                                          ["image"],
+                                      "name": _serviceProvider.list[index]
+                                          ["name"]
+                                    },
                                   )));
                     },
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: NetworkImage(list[index]["image"]),
+                        backgroundImage:
+                            NetworkImage(_serviceProvider.list[index]["image"]),
                       ),
-                      title: Text(list[index]["name"]),
-                      trailing: IconButton(
-                        onPressed: () {
-                          log("End");
-                          deleteData(docList[index]);
-                        },
-                        icon: Icon(Icons.delete),
+                      title: Text(_serviceProvider.list[index]["name"]),
+                      trailing: SizedBox(
+                        width: width(context) * 0.27,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (builder) => EditScreen(
+                                              docId: _serviceProvider
+                                                  .docList[index],
+                                              data: {
+                                                "image": _serviceProvider
+                                                    .list[index]["image"],
+                                                "name": _serviceProvider
+                                                    .list[index]["name"]
+                                              },
+                                            )));
+                              },
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.green,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                _serviceProvider.deleteData(
+                                    _serviceProvider.docList[index]);
+                              },
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 );
               })
-          : Center(
+          : const Center(
               child: Text("No Data"),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => AddScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const AddScreen()));
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
